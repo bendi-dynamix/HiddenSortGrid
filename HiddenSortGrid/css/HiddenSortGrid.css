@@ -1,0 +1,439 @@
+.dmx-pcf {
+    --pcf-row-height: 42px;
+    --pcf-font-color: rgb(36, 36, 36);
+    --pcf-font-size: 14px;
+    --pcf-focus-ring: #0f6cbd;
+    --pcf-row-hover-background: #f5f5f5;
+    --pcf-hover-overlay: rgba(0, 0, 0, 0.1);
+    --pcf-cell-radius: 4px;
+    --pcf-header-row-height: 42px;
+}
+
+.dmx-pcf .pcf-grid [role="columnheader"] {
+    box-shadow: none;
+    box-sizing: border-box;
+    color: var(--pcf-font-color);
+    display: inline-flex;
+    font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+    font-size: var(--pcf-font-size);
+    font-style: normal;
+    font-weight: 600;
+    height: var(--pcf-row-height);
+    line-height: 20px;
+    overflow: hidden;
+    overflow-wrap: break-word;
+    text-overflow: ellipsis;
+    -webkit-font-smoothing: antialiased;
+}
+
+.dmx-pcf .pcf-grid [role="columnheader"]:hover,
+.dmx-pcf .pcf-grid [role="columnheader"]:focus-visible,
+.dmx-pcf .pcf-grid .fui-DataGridHeader .fui-TableSelectionCell:hover,
+.dmx-pcf .pcf-grid .fui-TableSelectionCell:focus-within {
+    box-shadow: inset 0 0 0 2px var(--pcf-focus-ring);
+    outline: none;
+}
+
+.dmx-pcf .pcf-grid [role="columnheader"],
+.dmx-pcf .pcf-grid [role="columnheader"] *,
+.dmx-pcf .pcf-grid [role="gridcell"],
+.dmx-pcf .pcf-grid [role="gridcell"] * {
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.dmx-pcf .pcf-grid .fui-TableResizeHandle {
+    cursor: ew-resize;
+}
+
+.dmx-pcf .pcf-col--no-resize .fui-TableResizeHandle {
+    display: none !important;
+}
+
+.dmx-pcf .pcf-grid [role="gridcell"] {
+    align-items: center;
+    box-shadow: none;
+    box-sizing: border-box;
+    color: var(--pcf-font-color);
+    display: flex;
+    font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+    font-size: var(--pcf-font-size);
+    font-style: normal;
+    font-weight: normal;
+    line-height: 20px;
+    position: relative;
+    overflow: hidden;
+    overflow-wrap: break-word;
+    text-overflow: ellipsis;
+    -webkit-font-smoothing: antialiased;
+}
+
+.dmx-pcf .pcf-grid a.pcf-link {
+    color: #115ea3;
+    text-decoration: none;
+}
+
+.dmx-pcf .pcf-grid .fui-DataGridHeader .fui-TableSelectionCell {
+    height: var(--pcf-header-row-height);
+}
+
+.dmx-pcf .pcf-grid .fui-TableSelectionCell {
+    height: var(--pcf-row-height);
+}
+
+.dmx-pcf .pcf-grid .fui-Checkbox:focus-within::after {
+    border: 0 !important;
+}
+
+.dmx-pcf .pcf-grid [data-fui-focus-visible][role="gridcell"] {
+    outline: none !important;
+}
+
+.dmx-pcf .pcf-grid [role="gridcell"]:focus-within {
+    box-shadow: inset 0 0 0 2px var(--pcf-focus-ring);
+    outline: none;
+}
+
+.dmx-pcf .pcf-grid .fui-Checkbox input:checked+.fui-Checkbox__indicator::before {
+    content: none;
+}
+
+.dmx-pcf .pcf-grid .fui-Checkbox:hover input:not(:checked)+.fui-Checkbox__indicator::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+
+    display: block;
+    pointer-events: none;
+
+    background: #605e5c;
+
+    -webkit-mask: url("data:image/svg+xml;utf8,  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'>    <path d='M9.76 3.2c.3.29.32.76.04 1.06l-4.25 4.5a.75.75 0 0 1-1.08.02L2.22 6.53a.75.75 0 0 1 1.06-1.06l1.7 1.7L8.7 3.24a.75.75 0 0 1 1.06-.04Z' fill='black'/>  </svg>") center / 12px 12px no-repeat;
+    mask: url("data:image/svg+xml;utf8,  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'>    <path d='M9.76 3.2c.3.29.32.76.04 1.06l-4.25 4.5a.75.75 0 0 1-1.08.02L2.22 6.53a.75.75 0 0 1 1.06-1.06l1.7 1.7L8.7 3.24a.75.75 0 0 1 1.06-.04Z' fill='black'/>  </svg>") center / 12px 12px no-repeat;
+}
+
+.dmx-pcf .pcf-grid .pcf-open-header,
+.dmx-pcf .pcf-grid .pcf-open-cell,
+.dmx-pcf .pcf-grid .pcf-open-btn {
+    justify-content: center;
+    cursor: pointer;
+}
+
+.dmx-pcf .pcf-grid .pcf-open-header {
+    height: var(--pcf-row-height);
+    width: var(--pcf-row-height);
+    color: var(--pcf-font-color);
+    text-align: center;
+}
+
+.dmx-pcf .pcf-grid .pcf-open-btn {
+    border: 0;
+    background: transparent;
+    color: #115ea3;
+}
+
+.dmx-pcf .pcf-grid [role="row"]:not([aria-selected="true"]):active {
+    background-color: transparent !important;
+}
+
+.dmx-pcf .pcf-grid [role="row"]:not([aria-selected="true"]):hover:active {
+    background-color: var(--pcf-row-hover-background) !important;
+}
+
+.dmx-pcf .pcf-grid [role="row"][aria-selected="true"]:hover>[role="gridcell"],
+.dmx-pcf .pcf-grid [role="row"][aria-selected="true"]:hover .fui-DataGridRow__selectionCell {
+    background-color: rgb(207, 228, 250) !important;
+}
+
+.dmx-pcf .pcf-grid [role="row"]:not([aria-selected="true"])>[role="gridcell"]:hover:not(.fui-DataGridHeader .fui-TableSelectionCell) {
+    background-color: var(--pcf-hover-overlay);
+    border-radius: var(--pcf-cell-radius);
+}
+
+.dmx-pcf .pcf-grid [role="row"][aria-selected="true"]>[role="gridcell"]:hover:not(.fui-TableSelectionCell):not(:has(.pcf-inline-editing-cell))::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-color: var(--pcf-hover-overlay);
+    border-radius: var(--pcf-cell-radius);
+}
+
+.dmx-pcf .pcf-grid [role="row"]:hover [role="gridcell"] a.pcf-link {
+    text-decoration: underline;
+}
+
+.dmx-pcf .pcf-grid-footer {
+    display: flex;
+    align-items: center;
+    padding-left: 20px;
+    font-size: var(--pcf-font-size);
+    line-height: var(--pcf-row-height);
+    color: var(--pcf-font-color);
+    gap: 20px;
+}
+
+.dmx-pcf .pcf-grid .pcf-headerline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.dmx-pcf .pcf-grid .pcf-titlewrap {
+    display: flex;
+    align-items: center;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.dmx-pcf .pcf-grid .pcf-title {
+    flex: 0 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dmx-pcf .pcf-grid .pcf-required-symbol {
+    flex: 0 0 auto;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgb(164, 38, 44);
+    padding: 0;
+}
+
+.dmx-pcf .pcf-grid .pcf-sorticon {
+    flex: 0 0 auto;
+    line-height: 0;
+}
+
+.dmx-pcf .pcf-grid .pcf-sorticon svg {
+    display: block;
+}
+
+.dmx-pcf .pcf-grid .pcf-filtericon {
+    flex: 0 0 auto;
+    line-height: 0;
+}
+
+.dmx-pcf .pcf-grid .pcf-filtericon svg {
+    display: block;
+}
+
+.dmx-pcf .pcf-grid .pcf-caret {
+    flex: 0 0 auto;
+    line-height: 0;
+}
+
+.dmx-pcf .pcf-grid .pcf-caret svg {
+    display: block;
+}
+
+.dmx-pcf-filter-popover-control {
+    min-width: 218px;
+    width: fit-content;
+    max-width: 318px;
+}
+
+.dmx-pcf-filter-popover-control .popover-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.dmx-pcf-filter-popover-control .popover-body {
+    display: grid;
+    gap: 8px;
+}
+
+.dmx-pcf-filter-popover-control .popover-buttons-container {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    justify-content: flex-end;
+}
+
+.dmx-pcf-filter-popover-control .popover-button {
+    min-width: 80px;
+    width: fit-content;
+    max-width: 130px;
+}
+
+.dmx-pcf-filter-calendar-control,
+.dmx-pcf-datecell-calendar {
+    background: white;
+}
+
+.dmx-pcf-filter-oobFocusControl::after,
+.dmx-pcf-filter-oobFocusControl:focus-within::after {
+    content: none !important;
+    border: 0 !important;
+    height: 0 !important;
+    transform: none !important;
+    transition: none !important;
+}
+
+.dmx-pcf-filter-oobFocusControl,
+.dmx-pcf-filter-oobFocusControl:hover,
+.dmx-pcf-filter-oobFocusControl:active {
+    border: 1px solid #616161;
+    border-radius: 2px;
+    background: white;
+}
+
+.dmx-pcf-filter-oobFocusControl:focus-within {
+    border: 1px solid #0f6cbd;
+    border-radius: 2px;
+    background: white;
+    box-shadow: inset 0 0 0 1px #0f6cbd;
+}
+
+.dmx-pcf .pcf-grid .fui-TableCellLayout__content {
+    width: 100%;
+}
+
+.dmx-pcf .pcf-grid .pcf-editable-cell :where(.fui-Input,
+    .fui-Input__input,
+    .fui-Combobox,
+    .fui-Combobox__input,
+    .fui-Dropdown,
+    .fui-Select,
+    .fui-Textarea,
+    .fui-TagPicker,
+    .fui-TagPicker__input) {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    outline: 0 !important;
+    cursor: default;
+}
+
+.dmx-pcf .pcf-grid .pcf-editable-cell :where(.fui-Input__input, .fui-Combobox__input, .fui-Textarea, .fui-TagPicker__input, .fui-TagPicker__input, .fui-DatePicker) {
+    width: 100%;
+    padding: 0;
+}
+
+.dmx-pcf .pcf-grid [role="row"][aria-selected="true"]>[role="gridcell"]:has(> .pcf-editable-cell:focus-within):hover:not(.fui-TableSelectionCell)::after {
+    content: none;
+    background: transparent;
+}
+
+.dmx-pcf .pcf-grid [role="row"]>[role="gridcell"]:has(.pcf-inline-editing-cell),
+.dmx-pcf .pcf-grid [role="row"]:hover>[role="gridcell"]:has(.pcf-inline-editing-cell) {
+    background-color: #fff !important;
+}
+
+.dmx-pcf .pcf-grid .fui-Input::after,
+.dmx-pcf .pcf-grid .fui-Input:focus-within::after,
+.dmx-pcf .pcf-grid .fui-Combobox::after,
+.dmx-pcf .pcf-grid .fui-Combobox:focus-within::after {
+    content: none !important;
+    border: 0 !important;
+    height: 0 !important;
+    transform: none !important;
+    transition: none !important;
+}
+
+.dmx-pcf .pcf-grid .fui-Combobox {
+    padding: 0;
+}
+
+.dmx-pcf .pcf-grid .pcf-inline-cell-icon {
+    display: none;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.dmx-pcf .pcf-grid [role="gridcell"]:hover .pcf-inline-cell-icon,
+.dmx-pcf .pcf-grid [role="gridcell"]:focus-within .pcf-inline-cell-icon {
+    display: block;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.dmx-pcf-picklist-options [role="option"] {
+    padding: 0 10px 0 5px;
+    height: 36px;
+    width: auto;
+
+    font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+[role="listbox"]:has(.dmx-pcf-picklist-options) {
+    padding: 0;
+}
+
+.dmx-pcf-picklist-options [role="option"]::after {
+    content: none !important;
+    border: 0 !important;
+    background: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.dmx-pcf .errorBanner {
+    background-color: #fde7e9;
+    width: 100%;
+    height: 32px;
+    min-height: 32px;
+    border: 0;
+    border-radius: 0;
+}
+
+.dmx-pcf .errorBanner span,
+.dmx-pcf-errorBanner-options [role="option"] span {
+    padding: 0 0 0 10px;
+}
+
+.dmx-pcf .errorBanner::after,
+.dmx-pcf .errorBanner:focus-within::after {
+    content: none !important;
+    border: 0 !important;
+    height: 0 !important;
+    transform: none !important;
+    transition: none !important;
+}
+
+.dmx-pcf .errorBanner [role="combobox"] {
+    padding: 0 10px 0 0;
+    width: 100%;
+}
+
+.dmx-pcf .errorBanner [role="combobox"] span {
+    padding: 0 0 0 6px;
+}
+
+.dmx-pcf .errorBanner,
+.dmx-pcf .errorBanner [role="combobox"] {
+    font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.dmx-pcf-errorBanner-options [role="option"] {
+    padding: 0 10px 0 5px;
+    height: 36px;
+
+    font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+[role="listbox"]:has(.dmx-pcf-errorBanner-options) {
+    padding: 0;
+}

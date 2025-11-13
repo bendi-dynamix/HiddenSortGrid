@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- ===== Control (title & description) ===== -->
+  <data name="Hidden_Sort_Grid_Display" xml:space="preserve">
+    <value>Hidden Sort Grid</value>
+  </data>
+  <data name="Hidden_Sort_Grid_Desc" xml:space="preserve">
+    <value>PCF subgrid with readonly/editable modes, optional filters and sorting, and support for hidden and locked columns.</value>
+  </data>
+
+  <!-- ===== DataSet ===== -->
+  <data name="Items_Display" xml:space="preserve">
+    <value>Items</value>
+  </data>
+
+  <!-- ===== MakerSettings properties ===== -->
+
+  <!-- hideSortingColumn -->
+  <data name="Hide_Sorting_Column_Display" xml:space="preserve">
+    <value>Hide sorting column</value>
+  </data>
+  <data name="Hide_Sorting_Column_Desc" xml:space="preserve">
+    <value>Hides the technical sort column / header in the grid UI. Default: enabled.</value>
+  </data>
+
+  <!-- editableGrid -->
+  <data name="Editable_Grid_Display" xml:space="preserve">
+    <value>Editable grid</value>
+  </data>
+  <data name="Editable_Grid_Desc" xml:space="preserve">
+    <value>Enable inline editing in the grid. Default: disabled.</value>
+  </data>
+
+  <!-- enableFiltering -->
+  <data name="Enable_Filtering_Display" xml:space="preserve">
+    <value>Enable filters</value>
+  </data>
+  <data name="Enable_Filtering_Desc" xml:space="preserve">
+    <value>Allow quick filtering in the grid. Default: enabled.</value>
+  </data>
+
+  <!-- enableSorting -->
+  <data name="Enable_Sorting_Display" xml:space="preserve">
+    <value>Enable sorting</value>
+  </data>
+  <data name="Enable_Sorting_Desc" xml:space="preserve">
+    <value>Allow sorting by column. Default: enabled.</value>
+  </data>
+
+  <!-- allowRowSelection -->
+  <data name="Allow_Row_Selection_Display" xml:space="preserve">
+    <value>Allow row selection</value>
+  </data>
+  <data name="Allow_Row_Selection_Desc" xml:space="preserve">
+    <value>Allow selecting rows in the grid (checkbox / highlight). Default: enabled.</value>
+  </data>
+
+  <!-- lockedColumns -->
+  <data name="Locked_Columns_Display" xml:space="preserve">
+    <value>Locked columns</value>
+  </data>
+  <data name="Locked_Columns_Desc" xml:space="preserve">
+    <value>Comma-separated logical names of columns locked in editable mode (non-editable). Default: empty.</value>
+  </data>
+
+  <!-- showOpenRecordColumn -->
+  <data name="Show_Open_Record_Column_Display" xml:space="preserve">
+    <value>Show “Open record” column</value>
+  </data>
+  <data name="Show_Open_Record_Column_Desc" xml:space="preserve">
+    <value>Add an action column to open the record in a new tab. Default: disabled.</value>
+  </data>
+</root>

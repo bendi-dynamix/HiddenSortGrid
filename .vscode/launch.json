@@ -1,0 +1,59 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Chrome: Launch D365 + PCF",
+            "type": "pwa-chrome",
+            "request": "launch",
+            "url": "https://org6426ffb8.crm4.dynamics.com/main.aspx?appid=933a4628-d5b2-f011-bbd3-7ced8d2e41ac&pagetype=entityrecord&etn=account&id=7f74faf4-78b7-f011-bbd4-7c1e52365f30",
+            //"url": "https://make.powerapps.com/e/4d223fd4-0f88-ebce-9610-5073e5397352/s/8b0ae990-a177-42fb-8c9c-3b6e21cb0b01/entity/account/form/edit/8448b78f-8f42-454e-8e2a-f8196b0419af?source=powerappsportal&source=powerappsportal",
+            "webRoot": "${workspaceFolder}",
+            "sourceMaps": true,
+            "urlFilter": "*cc_DynamiX.HiddenSortGrid/*",
+            "runtimeArgs": [
+                //"-incognito"
+            ],
+            "resolveSourceMapLocations": [
+                "**",
+                "!**/node_modules/**"
+            ],
+            "preLaunchTask": "build: pcf",
+            "sourceMapPathOverrides": {
+                "webpack://?:*/*": "${workspaceFolder}/*"
+            },
+            "skipFiles": [
+                "**/node_modules/**",
+                "**/*.min.js"
+            ]
+        },
+        {
+            "name": "Attach Chrome (Dataverse - pick iframe)",
+            "type": "pwa-chrome",
+            "request": "attach",
+            "port": 9222,
+            "webRoot": "${workspaceFolder}",
+            "urlFilter": "*org6426ffb8.crm4.dynamics.com/*",
+            "targetSelection": "pick",
+            "breakOnLoad": true,
+            "trace": true,
+            "sourceMaps": true,
+            "sourceMapPathOverrides": {
+                "webpack://pcf_tools_*/HiddenSortGrid/*": "${workspaceFolder}/HiddenSortGrid/*",
+                "webpack://*/HiddenSortGrid/*": "${workspaceFolder}/HiddenSortGrid/*",
+                "webpack:///*": "${workspaceFolder}/*",
+                "*/HiddenSortGrid/*": "${workspaceFolder}/HiddenSortGrid/*"
+            },
+            "skipFiles": [
+                "${workspaceFolder}/node_modules/**/*.js"
+            ]
+        }
+        /*
+        pac auth list
+        pac auth delete --name DEV
+        pac auth create --url https://org6426ffb8.crm4.dynamics.com --name DEV
+        pac auth select --index 1
+        msbuild .\HiddenSortGrid.cdsproj /t:build /restore /p:configuration=Debug
+        pac solution import --path .\bin\Debug\HiddenSortGrid.zip --publish-changes
+        */
+    ]
+}

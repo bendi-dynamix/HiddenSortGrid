@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml version="9.1.0.643" SolutionPackageVersion="9.1" languagecode="1033" generatedBy="CrmLive"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SolutionManifest>
+    <!-- Unique Name of Cds Solution-->
+    <UniqueName>DynamiX_HiddenSortGrid</UniqueName>
+    <FriendlyName>DynamiX - HiddenSortGrid</FriendlyName>
+    <LocalizedNames>
+      <!-- Localized Solution Name in language code -->
+      <LocalizedName description="DynamiX - HiddenSortGrid" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description languagecode="1033" description="HiddenSortGrid - PCF subgrid (readonly/editable), hidden sorting column, filters, locked columns.&#10;Licensed under MIT.&#10;&#10;More info &amp; source: https://github.com/bendi-dynamix/HiddenSortGrid" />
+    </Descriptions>
+    <Version>1.0.0.0</Version>
+    <!-- Solution Package Type: Unmanaged(0)/Managed(1)/Both(2)-->
+    <Managed>2</Managed>
+    <Publisher>
+      <!-- Unique Publisher Name of Cds Solution -->
+      <UniqueName>bendi_dynamix</UniqueName>
+      <FriendlyName>Bendi DynamiX</FriendlyName>
+      <LocalizedNames>
+        <!-- Localized Cds Publisher Name in language code-->
+        <LocalizedName description="Bendi DynamiX" languagecode="1033" />
+      </LocalizedNames>
+      <Descriptions>
+        <!-- Description of Cds Publisher in language code -->
+        <Description description="Solutions by Martin Beno (DynamiX)" languagecode="1033" />
+      </Descriptions>
+      <EMailAddress>mbendi34@gmail.com</EMailAddress>
+      <SupportingWebsiteUrl>https://github.com/bendi-dynamix/HiddenSortGrid</SupportingWebsiteUrl>
+      <!-- Customization Prefix for the Cds Publisher-->
+      <CustomizationPrefix>dmx</CustomizationPrefix>
+      <!-- Derived Option Value Prefix for the Customization Prefix of Cds Publisher -->
+      <CustomizationOptionValuePrefix>14929</CustomizationOptionValuePrefix>
+      <Addresses>
+        <!-- Address of the Publisher-->
+        <Address>
+          <AddressNumber>1</AddressNumber>
+          <AddressTypeCode>1</AddressTypeCode>
+          <City xsi:nil="true"></City>
+          <County xsi:nil="true"></County>
+          <Country xsi:nil="true"></Country>
+          <Fax xsi:nil="true"></Fax>
+          <FreightTermsCode xsi:nil="true"></FreightTermsCode>
+          <ImportSequenceNumber xsi:nil="true"></ImportSequenceNumber>
+          <Latitude xsi:nil="true"></Latitude>
+          <Line1 xsi:nil="true"></Line1>
+          <Line2 xsi:nil="true"></Line2>
+          <Line3 xsi:nil="true"></Line3>
+          <Longitude xsi:nil="true"></Longitude>
+          <Name xsi:nil="true"></Name>
+          <PostalCode xsi:nil="true"></PostalCode>
+          <PostOfficeBox xsi:nil="true"></PostOfficeBox>
+          <PrimaryContactName xsi:nil="true"></PrimaryContactName>
+          <ShippingMethodCode>1</ShippingMethodCode>
+          <StateOrProvince xsi:nil="true"></StateOrProvince>
+          <Telephone1 xsi:nil="true"></Telephone1>
+          <Telephone2 xsi:nil="true"></Telephone2>
+          <Telephone3 xsi:nil="true"></Telephone3>
+          <TimeZoneRuleVersionNumber xsi:nil="true"></TimeZoneRuleVersionNumber>
+          <UPSZone xsi:nil="true"></UPSZone>
+          <UTCOffset xsi:nil="true"></UTCOffset>
+          <UTCConversionTimeZoneCode xsi:nil="true"></UTCConversionTimeZoneCode>
+        </Address>
+        <Address>
+          <AddressNumber>2</AddressNumber>
+          <AddressTypeCode>1</AddressTypeCode>
+          <City xsi:nil="true"></City>
+          <County xsi:nil="true"></County>
+          <Country xsi:nil="true"></Country>
+          <Fax xsi:nil="true"></Fax>
+          <FreightTermsCode xsi:nil="true"></FreightTermsCode>
+          <ImportSequenceNumber xsi:nil="true"></ImportSequenceNumber>
+          <Latitude xsi:nil="true"></Latitude>
+          <Line1 xsi:nil="true"></Line1>
+          <Line2 xsi:nil="true"></Line2>
+          <Line3 xsi:nil="true"></Line3>
+          <Longitude xsi:nil="true"></Longitude>
+          <Name xsi:nil="true"></Name>
+          <PostalCode xsi:nil="true"></PostalCode>
+          <PostOfficeBox xsi:nil="true"></PostOfficeBox>
+          <PrimaryContactName xsi:nil="true"></PrimaryContactName>
+          <ShippingMethodCode>1</ShippingMethodCode>
+          <StateOrProvince xsi:nil="true"></StateOrProvince>
+          <Telephone1 xsi:nil="true"></Telephone1>
+          <Telephone2 xsi:nil="true"></Telephone2>
+          <Telephone3 xsi:nil="true"></Telephone3>
+          <TimeZoneRuleVersionNumber xsi:nil="true"></TimeZoneRuleVersionNumber>
+          <UPSZone xsi:nil="true"></UPSZone>
+          <UTCOffset xsi:nil="true"></UTCOffset>
+          <UTCConversionTimeZoneCode xsi:nil="true"></UTCConversionTimeZoneCode>
+        </Address>
+      </Addresses>
+    </Publisher>
+    <RootComponents />
+    <MissingDependencies />
+  </SolutionManifest>
+</ImportExportXml>
