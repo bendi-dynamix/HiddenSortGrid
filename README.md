@@ -6,11 +6,11 @@
 
 ## 🧩 Overview
 
-HiddenSortGrid is a **custom PCF control** for Dynamics 365 / Power Apps model-driven apps that extends the functionality of the standard OOB subgrid.
+HiddenSortGrid is a **Fluent UI v9 DataGrid**-based Power Apps **custom PCF control** for Dynamics 365 / Power Apps model-driven apps that extends the functionality of the standard OOB subgrid.
 
 It was built to provide makers with more flexibility in displaying related records while maintaining the familiar user experience of the native subgrid.
 
-For example, it’s ideal when you need to display sorted ranges — such as shoe or clothing sizes — where sorting relies on a technical field that you don’t want users to see.
+For example, it’s ideal when you need to display sorted ranges — such as financial ranges (e.g., rating bands, price categories, or VAT intervals) or shoe and clothing sizes — where sorting relies on a technical field that you don’t want users to see.
 
 No additional dependencies. 100% client-side.
 
