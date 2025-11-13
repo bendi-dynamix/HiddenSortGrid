@@ -28,6 +28,58 @@ No additional dependencies. 100% client-side.
 
 ---
 
+## 📸 Screenshots
+
+### 🔹 Subgrids comparison
+![Subgrids comparison](./docs/images/subgrids-comparison.png)  
+Comparison of the standard **Read-Only Subgrid**, **Power Apps Grid Control**, and **Hidden Sort Grid**.  
+Hidden Sort Grid combines editable grid functionality with a clean look — without displaying the helper “sort” column.
+
+---
+
+### 🔹 OOB-like command bar
+![OOB-like command bar](./docs/images/oob-command-bar.png)  
+Fully compatible with the standard **Command Bar** (Ribbon).  
+When users select rows, the control behaves just like the native grid component.
+
+---
+
+### 🔹 Maker settings
+![Maker settings](./docs/images/maker-settings.png)  
+Configuration options available to makers — toggle filtering, sorting, inline editing, locked columns, and the “Open record” icon visibility.
+
+---
+
+### 🔹 Editable columns
+![Editable columns](./docs/images/editable-columns.png)  
+The grid supports inline editing for multiple field types (text, number, date/time, lookup, boolean) directly in the view — just like the Power Apps Grid Control.
+
+---
+
+### 🔹 Formats reflect fields and user settings
+![Formats reflect fields and user settings](./docs/images/formats-reflects-fields-and-user-settings.png)  
+Field formats (currency, dates, numbers, etc.) automatically respect both Dataverse field metadata and the user’s personal settings.
+
+---
+
+### 🔹 OOB-like filtering
+![OOB-like filtering](./docs/images/oob-like-filtering.png)  
+Supports built-in Power Apps-style filtering, including text search, lookup filters, and numeric range filters.
+
+---
+
+### 🔹 OOB-like sorting
+![OOB-like sorting](./docs/images/oob-like-sorting.png)  
+Enables column sorting without exposing the technical “sort order” column — maintaining a clean and minimal layout.
+
+---
+
+### 🔹 OOB-like error banner
+![OOB-like error banner](./docs/images/oob-like-error-banner.png)  
+Validation errors are displayed using the native Power Apps banner style, including number range and formatting validation.
+
+---
+
 ## ⚙️ Configuration
 
 | Property | Description |
