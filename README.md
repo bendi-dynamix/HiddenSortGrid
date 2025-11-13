@@ -44,7 +44,7 @@ No additional dependencies. 100% client-side.
 
 ## 🚀 Installation
 
-1. Import the managed solution (`Bendi.HiddenSortGrid`) into your environment.  
+1. Import the managed solution (`DynamiX - HiddenSortGrid`) into your environment.  
 2. Add the **HiddenSortGrid** control to a subgrid on your form.  
 3. Configure the desired properties (see table above).  
 4. Publish and enjoy your cleaner, more flexible subgrid experience.
@@ -55,9 +55,9 @@ No additional dependencies. 100% client-side.
 
 | Item | Value |
 |------|-------|
-| **Solution name** | `Bendi.HiddenSortGrid` |
-| **Publisher** | Bendi – DynamiX |
-| **Prefix** | `bndi` |
+| **Solution name** | `DynamiX - HiddenSortGrid` |
+| **Publisher** | Bendi DynamiX |
+| **Prefix** | `dmx` |
 | **Version** | `1.0.0.0` |
 | **License** | [MIT](LICENSE) |
 
@@ -84,7 +84,7 @@ These features are planned for future updates once the core functionality is ful
 ## 🧑‍💻 Author
 
 **Martin Beno**  
-Bendi – DynamiX  
+Bendi DynamiX  
 [LinkedIn](https://www.linkedin.com/in/martin-beno-dynamics365-ce)  
 [GitHub Profile](https://github.com/bendi-dynamix)
 
