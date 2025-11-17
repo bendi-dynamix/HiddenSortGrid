@@ -3,6 +3,7 @@
 
 import * as React from "react";
 import {
+  Checkbox,
   DataGrid,
   DataGridBody,
   DataGridCell,
@@ -12,20 +13,21 @@ import {
   Dropdown,
   Option,
   OptionGroup,
+  Spinner,
   TableCellLayout,
   TableColumnSizingOptions,
   createTableColumn,
 } from "@fluentui/react-components";
 
-import { getLookupRef, generateRandomId, isRightAligned, ColumnInfo, SortDirection, getLookupRefFromPrimary, Row, changedValues, RawValue, extractRawValue, Cell, isSameCell, CellHandle, isTypingKey, boolToNumber, ValidableHandle, toIndexStrings, isOpenInMakerMode, getBoolFromMainfestProp } from "./Helper";
+import { getLookupRef, generateRandomId, isRightAligned, ColumnInfo, SortDirection, getLookupRefFromPrimary, Row, changedValues, RawValue, extractRawValue, Cell, isSameCell, CellHandle, isTypingKey, boolToNumber, ValidableHandle, toIndexStrings, isOpenInMakerMode, getBoolFromMainfestProp, RowStatusInfo, SaveStatus } from "./Helper";
 import { DateMetadata, FieldMetadata, getFieldInfo, getOptionsetValues, loadEntityAttributesMetadata, NumericMetadata, TextMetadata } from "./MetadataHelper";
 import { SimpleKind, toLinkType, toNumberType, toSimpleType } from "./TypesHelper";
-import { ColumnResizeController, goToRecord } from "./ColumnResizeController";
+import { ColumnResizeController, GO_TO_RECORD_COL_ID, SELECTION_COL_ID, STATUS_COL_ID } from "./ColumnResizeController";
 import { gridScrollbars } from "./GridScrollbars";
 import { HeaderMenu, HeaderMenuHandle } from "./HeaderMenu";
 import { HeaderFilter, HeaderFilterHandle } from "./HeaderFilter";
 import { IInputs } from "./generated/ManifestTypes";
-import { DismissCircle20Regular, ErrorCircle20Regular, Open16Regular, Table48Filled, TableSparkle24Filled } from "@fluentui/react-icons";
+import { CheckmarkCircle16Regular, CheckmarkCircle20Regular, DismissCircle20Regular, ErrorCircle16Regular, ErrorCircle20Regular, Open16Regular, Table48Filled, TableSparkle24Filled } from "@fluentui/react-icons";
 import { createFilterExpression } from "./FilterExpressionHelper";
 import { buildGridExtraction } from "./FetchXmlBuilder";
 import { getFormInfo } from "./MainRelationshipHelper";
@@ -77,7 +79,7 @@ export interface HiddenSortGridComponentProps {
   context: ComponentFramework.Context<IInputs>;
   dataset: ComponentFramework.PropertyTypes.DataSet;
   allocatedWidth: number;
-  reloadToken: string;
+  gridReloaded: boolean;
 }
 
 interface ErrorDetails {
@@ -89,11 +91,12 @@ interface ErrorDetails {
 export type LinkEntity = ComponentFramework.PropertyHelper.DataSetApi.LinkEntityExposedExpression;
 export type SelectionMode = "single" | "multiselect";
 
-const GRID_LEFT_PADDING = 20;
-const GRID_RIGHT_PADDING = 32;
 
+const STATUS_COL_PX = 20;
 const CHECKBOX_COL_PX = 44;
 const GOTO_COL_PX = 42;
+
+const GRID_RIGHT_PADDING = 32;
 
 const COLUMN_MIN_WIDTH = 42;
 
@@ -102,12 +105,13 @@ const BODY_MIN_HEIGHT = 147;
 
 const GRID_HEADER_ID = generateRandomId();
 const GRID_BODY_ID = generateRandomId();
+const HEADER_ROW_ID = "__hsgHeaderRow__";
 
 export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = ({
   context,
   dataset,
   allocatedWidth,
-  reloadToken
+  gridReloaded
 }) => {
   /// eslint-disable-next-line no-debugger
   //debugger;
@@ -284,7 +288,28 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
     void loadMeta();
   }, [loadMeta]);
 
-  const saveRow = async (item: Row, vc: ColumnInfo, columns: ColumnInfo[]) => {
+  const [rowStatuses, setRowStatuses] = React.useState<Record<string, RowStatusInfo>>({});
+  const setRowStatus = React.useCallback((
+    rowId: string,
+    status: SaveStatus,
+    transient = false
+  ) => {
+    setRowStatuses(prev => ({ ...prev, [rowId]: { status } }));
+
+    if (transient) {
+      window.setTimeout(() => {
+        setRowStatuses(prev => {
+          if (prev[rowId]?.status !== status)
+            return prev;
+
+          const { [rowId]: _, ...rest } = prev;
+          return rest;
+        });
+      }, 5000);
+    }
+  }, []);
+
+  const saveRow = async (item: Row, vc: ColumnInfo, columns: ColumnInfo[]): Promise<boolean> => {
     const _changedValues = changedValues(item, columns);
     const entityToUpdate = Object.fromEntries(
       Object.entries(_changedValues).map(([key, value]) => {
@@ -298,8 +323,11 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
       for (const [key, newValue] of Object.entries(_changedValues)) {
         item.originalValues[key] = newValue;
       }
+
+      return true;
     } catch (e) {
       console.error("Update failed", e);
+      return false;
     }
   };
 
@@ -362,30 +390,52 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
   ) => {
     const columnId = columnInfo.name;
 
-    item.validationInitializedByColumnChange = true;
+    item.validationInitiatedByColumnChange = true;
     const oldValue = item.rawValues?.[columnId] ?? "";
     const newValue = rawValue;
 
     item.rawValues[columnId] = newValue;
     item.formattedValues[columnId] = formattedValue;
 
-    const errorsOnRow = [...(item.validators?.values() ?? [])]
-      .some(validable => {
-        const isValid = validable.validate();
-        return !isValid;
-      }) ?? false;
+    let errorsOnRow = false;
+    for (const validable of [...(item.validators?.values() ?? [])]) {
+      const isValid = validable.validateCell();
+      if (!isValid)
+        errorsOnRow = true;
+    }
 
     if (errorsOnRow)
       return;
 
     if (oldValue !== newValue) {
-      void saveRow(item, columnInfo, visibleInfoColumns);
-    }
-  }, [saveRow, validationErrors]);
+      setRowStatus(item.id, "saving");
 
+      void (async () => {
+        const ok = await saveRow(item, columnInfo, visibleInfoColumns);
+        if (ok)
+          setRowStatus(item.id, "success", true);
+        else
+          setRowStatus(item.id, "error", true);
+      })();
+    }
+  }, [saveRow, visibleInfoColumns, setRowStatus]);
+
+  const [selectedItems, setSelectedItems] = React.useState<Set<string>>(new Set());
   const [editingCell, setEditingCell] = React.useState<Cell | null>(null);
-  const columns = React.useMemo(() => {
-    const cols = visibleInfoColumns.map(vc => {
+
+  function onEditingFinished(
+    rowId: string,
+    columnId: string,
+    gridCellRef: React.RefObject<HTMLDivElement>
+  ) {
+    if (isSameCell({ rowId, columnId }, editingCell)) {
+      setEditingCell(null);
+      gridCellRef.current?.focus();
+    }
+  }
+
+  const columns = (() => {
+    const cols = /*React.useMemo*/(() => visibleInfoColumns.map(vc => {
       const isRight = isRightAligned(vc.simpleType);
       const isLookup = vc.simpleType === "lookup";
       const linkType = vc.simpleType === "text" ? toLinkType(vc.dataType) : null;
@@ -418,54 +468,60 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
           };
 
           return (
-            <TableCellLayout
-              truncate
-              style={{
-                justifyContent: isRight ? "flex-end" : "flex-start",
-                textAlign: isRight ? "right" : "left",
-                cursor: "pointer",
-                height: "100%"
-              }}
-              onClick={handleOpen}
-              onKeyDown={handleKey}
-              role="button"
-              tabIndex={-1}
+            <DataGridHeaderCell
+              className={"pcf-grid-header" +
+                isRight ? " pcf-grid-header-right" : ""
+              }
             >
-              <HeaderMenu
-                ref={menuRef}
-                columnInfo={vc}
-                isReadOnlyGrid={isReadOnlyGrid}
-                allowFiltering={makerSettings.enableFiltering}
-                allowSorting={makerSettings.enableSorting}
-                onSort={(direction: SortDirection) => {
-                  for (const ci of visibleInfoColumns)
-                    ci.sortDirection = undefined;
+              <TableCellLayout
+                truncate
+                style={{
+                  justifyContent: isRight ? "flex-end" : "flex-start",
+                  textAlign: isRight ? "right" : "left",
+                  cursor: "pointer",
+                  height: "100%"
+                }}
+                onClick={handleOpen}
+                onKeyDown={handleKey}
+                role="button"
+                tabIndex={-1}
+              >
+                <HeaderMenu
+                  ref={menuRef}
+                  columnInfo={vc}
+                  isReadOnlyGrid={isReadOnlyGrid}
+                  allowFiltering={makerSettings.enableFiltering}
+                  allowSorting={makerSettings.enableSorting}
+                  onSort={(direction: SortDirection) => {
+                    for (const ci of visibleInfoColumns)
+                      ci.sortDirection = undefined;
 
-                  vc.sortDirection = direction;
-                  sortBy(vc);
-                }}
-                onFilter={(el: HTMLElement) => {
-                  filterRef.current?.openAt(el);
-                }}
-                onClearFilter={() => {
-                  vc.filterModel = null;
-                  filterGrid();
-                }}
-              />
+                    vc.sortDirection = direction;
+                    sortBy(vc);
+                  }}
+                  onFilter={(el: HTMLElement) => {
+                    filterRef.current?.openAt(el);
+                  }}
+                  onClearFilter={() => {
+                    vc.filterModel = null;
+                    filterGrid();
+                  }}
+                />
 
-              <HeaderFilter
-                ref={filterRef}
-                onApply={(filterModel) => {
-                  vc.filterModel = filterModel;
-                  filterGrid();
-                }}
-                context={context}
-                columnInfo={vc}
-                dateUserFormatInfo={userDateFormatInfo}
-                gridEntityName={gridEntityName}
-                extractedGridFilters={extractedGridFilters}
-              />
-            </TableCellLayout >
+                <HeaderFilter
+                  ref={filterRef}
+                  onApply={(filterModel) => {
+                    vc.filterModel = filterModel;
+                    filterGrid();
+                  }}
+                  context={context}
+                  columnInfo={vc}
+                  dateUserFormatInfo={userDateFormatInfo}
+                  gridEntityName={gridEntityName}
+                  extractedGridFilters={extractedGridFilters}
+                />
+              </TableCellLayout>
+            </DataGridHeaderCell>
           );
         },
 
@@ -505,9 +561,6 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
               />
             ) : vc.simpleType === "money" ? (
               <MoneyCell
-                formatting={context.formatting}
-                gridCellRef={gridCellRef}
-                validationToken={item.validationInitializedByColumnChange ? reloadToken : ""}
                 rawValue={rawValue as number}
                 formattedValue={formattedValue}
                 isEditing={isEditing}
@@ -516,20 +569,22 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
                 numericInfo={vc.metadataInfo as NumericMetadata}
                 userFormatInfo={userNumberFormatInfo}
 
+                rowValidationInitiated={item.validationInitiatedByColumnChange}
                 onValidate={(error) => onValidate(item.id, vc, error)}
                 onCommit={(rawValue, formattedValue) => onCommit(item, vc, rawValue, formattedValue)}
+                onEditingFinished={() => onEditingFinished(item.id, vc.name, gridCellRef)}
 
                 ref={(inst) => {
                   cellHandle = inst;
-                  if (cellHandle != null)
+                  if (cellHandle != null) {
                     item.validators.set(vc.name, cellHandle as ValidableHandle);
+                    if (gridReloaded)
+                      cellHandle.resetCellValidation();
+                  }
                 }}
               />
             ) : numberType != null ? (
               <NumberCell
-                formatting={context.formatting}
-                gridCellRef={gridCellRef}
-                validationToken={item.validationInitializedByColumnChange ? reloadToken : ""}
                 rawValue={rawValue as number}
                 formattedValue={formattedValue}
                 isEditing={isEditing}
@@ -538,20 +593,22 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
                 numericInfo={vc.metadataInfo as NumericMetadata}
                 userFormatInfo={userNumberFormatInfo}
 
+                rowValidationInitiated={item.validationInitiatedByColumnChange}
                 onValidate={(error) => onValidate(item.id, vc, error)}
                 onCommit={(rawValue, formattedValue) => onCommit(item, vc, rawValue, formattedValue)}
+                onEditingFinished={() => onEditingFinished(item.id, vc.name, gridCellRef)}
 
                 ref={(inst) => {
                   cellHandle = inst;
-                  if (cellHandle != null)
+                  if (cellHandle != null) {
                     item.validators.set(vc.name, cellHandle as ValidableHandle);
+                    if (gridReloaded)
+                      cellHandle.resetCellValidation();
+                  }
                 }}
               />
             ) : linkType != null || vc.isPrimary === true ? (
               <LinkCell
-                formatting={context.formatting}
-                gridCellRef={gridCellRef}
-                validationToken={item.validationInitializedByColumnChange ? reloadToken : ""}
                 rawValue={rawValue as string}
                 formattedValue={formattedValue}
                 isEditing={isEditing}
@@ -560,8 +617,10 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
                 textInfo={vc.metadataInfo as TextMetadata}
                 userFormatInfo={userNumberFormatInfo}
 
+                rowValidationInitiated={item.validationInitiatedByColumnChange}
                 onValidate={(error) => onValidate(item.id, vc, error)}
                 onCommit={(rawValue, formattedValue) => onCommit(item, vc, rawValue, formattedValue)}
+                onEditingFinished={() => onEditingFinished(item.id, vc.name, gridCellRef)}
 
                 onLookupClick={(e) => {
                   const lookup = isLookup ? getLookupRef(dataset.records[item.id], vc.name) : getLookupRefFromPrimary(dataset.records[item.id]);
@@ -576,15 +635,15 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
 
                 ref={(inst) => {
                   cellHandle = inst;
-                  if (cellHandle != null)
+                  if (cellHandle != null) {
                     item.validators.set(vc.name, cellHandle as ValidableHandle);
+                    if (gridReloaded)
+                      cellHandle.resetCellValidation();
+                  }
                 }}
               />
             ) : vc.simpleType === "text" ? (
               <TextCell
-                formatting={context.formatting}
-                gridCellRef={gridCellRef}
-                validationToken={item.validationInitializedByColumnChange ? reloadToken : ""}
                 rawValue={rawValue as string}
                 formattedValue={formattedValue}
                 isEditing={isEditing}
@@ -592,20 +651,22 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
                 textInfo={vc.metadataInfo as TextMetadata}
                 userFormatInfo={userNumberFormatInfo}
 
+                rowValidationInitiated={item.validationInitiatedByColumnChange}
                 onValidate={(error) => onValidate(item.id, vc, error)}
                 onCommit={(rawValue, formattedValue) => onCommit(item, vc, rawValue, formattedValue)}
+                onEditingFinished={() => onEditingFinished(item.id, vc.name, gridCellRef)}
 
                 ref={(inst) => {
                   cellHandle = inst;
-                  if (cellHandle != null)
+                  if (cellHandle != null) {
                     item.validators.set(vc.name, cellHandle as ValidableHandle);
+                    if (gridReloaded)
+                      cellHandle.resetCellValidation();
+                  }
                 }}
               />
             ) : vc.simpleType === "boolean" ? (
               <BoolCell
-                formatting={context.formatting}
-                gridCellRef={gridCellRef}
-                validationToken={item.validationInitializedByColumnChange ? reloadToken : ""}
                 rawValue={boolToNumber(rawValue as boolean)}
                 formattedValue={formattedValue}
                 isEditing={isEditing}
@@ -613,21 +674,23 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
                 fieldInfo={vc.metadataInfo as FieldMetadata}
                 valuesList={valuesList}
 
+                rowValidationInitiated={item.validationInitiatedByColumnChange}
                 onValidate={(error) => onValidate(item.id, vc, error)}
                 onCommit={(rawValue, formattedValue) => onCommit(item, vc, rawValue, formattedValue)}
+                onEditingFinished={() => onEditingFinished(item.id, vc.name, gridCellRef)}
                 onOpenButtonClicked={() => startEditing(new KeyboardEvent("Enter"))}
 
                 ref={(inst) => {
                   cellHandle = inst;
-                  if (cellHandle != null)
+                  if (cellHandle != null) {
                     item.validators.set(vc.name, cellHandle as ValidableHandle);
+                    if (gridReloaded)
+                      cellHandle.resetCellValidation();
+                  }
                 }}
               />
             ) : vc.simpleType === "picklist" ? (
               <PicklistCell
-                formatting={context.formatting}
-                gridCellRef={gridCellRef}
-                validationToken={item.validationInitializedByColumnChange ? reloadToken : ""}
                 rawValue={rawValue as number}
                 formattedValue={formattedValue}
                 isEditing={isEditing}
@@ -635,21 +698,24 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
                 fieldInfo={vc.metadataInfo as FieldMetadata}
                 valuesList={valuesList}
 
+                rowValidationInitiated={item.validationInitiatedByColumnChange}
                 onValidate={(error) => onValidate(item.id, vc, error)}
                 onCommit={(rawValue, formattedValue) => onCommit(item, vc, rawValue, formattedValue)}
+                onEditingFinished={() => onEditingFinished(item.id, vc.name, gridCellRef)}
                 onOpenButtonClicked={() => startEditing(new KeyboardEvent("Enter"))}
 
                 ref={(inst) => {
                   cellHandle = inst;
-                  if (cellHandle != null)
+                  if (cellHandle != null) {
                     item.validators.set(vc.name, cellHandle as ValidableHandle);
+                    if (gridReloaded)
+                      cellHandle.resetCellValidation();
+                  }
                 }}
               />
             ) : vc.simpleType === "datetime" ? (
               <DateCell
                 formatting={context.formatting}
-                gridCellRef={gridCellRef}
-                validationToken={item.validationInitializedByColumnChange ? reloadToken : ""}
                 rawValue={rawValue as Date}
                 formattedValue={formatDateD365(rawValue as Date, formatting, vc.metadataInfo as DateMetadata, userDateFormatInfo) ?? ""}
                 isEditing={isEditing}
@@ -657,14 +723,19 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
                 metadataInfo={vc.metadataInfo as DateMetadata}
                 userFormatInfo={userDateFormatInfo}
 
+                rowValidationInitiated={item.validationInitiatedByColumnChange}
                 onValidate={(error) => onValidate(item.id, vc, error)}
                 onCommit={(rawValue, formattedValue) => onCommit(item, vc, rawValue, formattedValue)}
+                onEditingFinished={() => onEditingFinished(item.id, vc.name, gridCellRef)}
                 onOpenButtonClicked={() => startEditing(new KeyboardEvent("Enter"))}
 
                 ref={(inst) => {
                   cellHandle = inst;
-                  if (cellHandle != null)
+                  if (cellHandle != null) {
                     item.validators.set(vc.name, cellHandle as ValidableHandle);
+                    if (gridReloaded)
+                      cellHandle.resetCellValidation();
+                  }
                 }}
               />
             ) : (
@@ -767,16 +838,272 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
           </DataGridCell>;
         },
       });
+    }))();//, [metaLoaded, columnInfoKey, editingCell, dataset?.sortedRecordIds, validationErrors]);
+
+    const statusCol = createTableColumn<Row>({
+      columnId: STATUS_COL_ID,
+      renderHeaderCell: () =>
+        <DataGridHeaderCell
+          className="pcf-grid-status-header pcf-col-no-resize"
+          data-row-id={HEADER_ROW_ID}
+          data-col-key={STATUS_COL_ID}
+          tabIndex={-1}
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+          onKeyDown={(e: React.KeyboardEvent) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+          onDoubleClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+        >
+          <div className="pcf-grid-status-bg" />
+          <TableCellLayout
+            truncate
+            style={{
+              justifyContent: "center",
+              textAlign: "center",
+              height: "100%"
+            }}>
+            <div className="pcf-grid-status-content" />
+          </TableCellLayout>
+        </DataGridHeaderCell>,
+      compare: () => 0,
+      renderCell: item => {
+        const rowId = item.id;
+        const hasValidationError = validationErrors.has(rowId);
+        const status = rowStatuses[rowId]?.status ?? "idle";
+
+        let icon: React.ReactNode = null;
+
+        if (hasValidationError) {
+          icon = (
+            <ErrorCircle16Regular
+              color="rgb(209, 52, 56)"
+            />
+          );
+        } else {
+          switch (status) {
+            case "saving":
+              icon = <Spinner size="extra-tiny" />;
+              break;
+            case "success":
+              icon = (
+                <CheckmarkCircle16Regular
+                  color="#107C10"
+                />
+              );
+              break;
+            case "error":
+              icon = (
+                <ErrorCircle16Regular
+                  color="rgb(209, 52, 56)"
+                />
+              );
+              break;
+            case "idle":
+            default:
+              icon = null;
+          }
+        }
+
+        const rand = Math.random() * 4;
+        if (rand <= 1)
+          icon = (
+            <ErrorCircle16Regular
+              color="rgb(209, 52, 56)"
+            />
+          );
+        else if (rand <= 2)
+          icon = (
+            <CheckmarkCircle16Regular
+              color="#107C10"
+            />
+          );
+        else if (rand <= 3)
+          icon = <Spinner size="extra-tiny" />;
+        else
+          icon = null;
+
+        return (
+          <DataGridCell
+            className="pcf-grid-status-cell"
+            data-row-id={rowId}
+            data-col-key={STATUS_COL_ID}
+            tabIndex={-1}
+            onClick={e => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+            onKeyDown={e => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+            onDoubleClick={e => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+          >
+            <div className="pcf-grid-status-bg" />
+            <TableCellLayout
+              style={{
+                justifyContent: "center",
+                textAlign: "center",
+                height: "100%"
+              }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "100%",
+                  lineHeight: 0,
+                }}
+              >
+                <div className="pcf-grid-status-content">
+                  {icon}
+                </div>
+              </div>
+            </TableCellLayout>
+          </DataGridCell>
+        );
+      }
     });
 
-    if (makerSettings.showOpenRecordColumn) {
-      cols.push(
-        createTableColumn<Row>({
-          columnId: goToRecord,
+    const selectionCol = makerSettings.allowRowSelection ?
+      React.useMemo(() => {
+        const totalRows = dataset.sortedRecordIds.length;
+        const selectedCount = selectedItems?.size ?? 0;
+
+        const headerChecked: boolean | "mixed" =
+          selectedCount === 0
+            ? false
+            : selectedCount === totalRows
+              ? true
+              : "mixed";
+
+        return createTableColumn<Row>({
+          columnId: SELECTION_COL_ID,
           renderHeaderCell: () => (
-            <TableCellLayout className="pcf-open-header">
-              <OpenRegular />
-            </TableCellLayout>
+            <DataGridHeaderCell
+              className="pcf-grid-selection-header pcf-col-no-resize"
+              data-row-id={HEADER_ROW_ID}
+              data-col-key={SELECTION_COL_ID}
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                e.preventDefault();
+
+                const someRowsAreSelected = (selectedItems.size ?? 0) > 0;
+                if (someRowsAreSelected)
+                  clearRowsSelection();
+                else
+                  setIsSelectingAllRows(true);
+              }}
+              onKeyDown={(e: React.KeyboardEvent) => {
+                if (e.key === " ") {
+                  e.stopPropagation();
+                  e.preventDefault();
+
+                  const someRowsAreSelected = (selectedItems.size ?? 0) > 0;
+                  if (someRowsAreSelected)
+                    clearRowsSelection();
+                  else
+                    setIsSelectingAllRows(true);
+                }
+              }}
+              onDoubleClick={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <TableCellLayout
+                truncate
+                style={{
+                  justifyContent: "center",
+                  textAlign: "center",
+                  height: "100%"
+                }}>
+                <Checkbox
+                  type="checkbox"
+                  aria-label="Select all rows"
+                  aria-selected={headerChecked === true}
+                  checked={headerChecked}
+                  tabIndex={-1}
+                />
+              </TableCellLayout>
+            </DataGridHeaderCell>
+          ),
+          compare: () => 0,
+          renderCell: item => {
+            const isSelected = selectedItems.has(item.id);
+
+            return (
+              <DataGridCell
+                className="pcf-grid-selection-cell"
+                data-row-id={item.id}
+                data-col-key={SELECTION_COL_ID}
+                onClick={e => {
+                  e.stopPropagation();
+                  e.preventDefault();
+
+                  addOrRemoveRowFromSelection(item.id);
+                }}
+                onKeyDown={e => {
+                  if (e.key === " " || e.key === "Enter") {
+                    e.stopPropagation();
+                    e.preventDefault();
+
+                    addOrRemoveRowFromSelection(item.id);
+                  }
+                }}
+                onDoubleClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+              >
+                <TableCellLayout
+                  truncate
+                  style={{
+                    justifyContent: "center",
+                    textAlign: "center",
+                    height: "100%"
+                  }}>
+                  <Checkbox
+                    type="checkbox"
+                    aria-label="Select row"
+                    aria-selected={isSelected}
+                    checked={isSelected}
+                    tabIndex={-1}
+                  />
+                </TableCellLayout>
+              </DataGridCell>
+            );
+          },
+        });
+      }, [metaLoaded, dataset?.sortedRecordIds, selectedItems]) : null;
+
+    const openRecordCol = makerSettings.showOpenRecordColumn ?
+      React.useMemo(() => {
+        return createTableColumn<Row>({
+          columnId: GO_TO_RECORD_COL_ID,
+          renderHeaderCell: () => (
+            <DataGridHeaderCell
+              className="pcf-grid-open-header pcf-col-no-resize"
+            >
+              <TableCellLayout
+                truncate
+                style={{
+                  justifyContent: "center",
+                  textAlign: "center",
+                  height: "100%"
+                }}>
+                <OpenRegular />
+              </TableCellLayout>
+            </DataGridHeaderCell>
           ),
           compare: () => 0,
           renderCell: item => {
@@ -787,7 +1114,15 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
 
             return (
               <DataGridCell
+                className="pcf-grid-open-cell"
                 onKeyDown={e => {
+                  if (e.key === " ") {
+                    e.stopPropagation();
+                    e.preventDefault();
+
+                    addOrRemoveRowFromSelection(item.id);
+                  }
+
                   if (e.key === "Enter") {
                     e.preventDefault();
                     e.stopPropagation();
@@ -799,7 +1134,13 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
                     });
                   }
                 }}>
-                <TableCellLayout className="pcf-open-cell">
+                <TableCellLayout
+                  truncate
+                  style={{
+                    justifyContent: "center",
+                    textAlign: "center",
+                    height: "100%"
+                  }}>
                   <button
                     type="button"
                     className="pcf-open-btn"
@@ -825,12 +1166,17 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
               </DataGridCell >
             );
           },
-        })
-      );
-    }
+        });
+      }, [metaLoaded, dataset?.sortedRecordIds]) : null;
 
-    return cols;
-  }, [metaLoaded, columnInfoKey, editingCell, dataset?.sortedRecordIds]);
+
+    return [
+      statusCol,
+      ...(selectionCol ? [selectionCol] : []),
+      ...cols,
+      ...(openRecordCol ? [openRecordCol] : [])
+    ];
+  })();
 
   // Records -> grid items
   const items: Row[] = React.useMemo(() => {
@@ -854,7 +1200,7 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
       }
 
       const currencySymbol = rec?.getFormattedValue?.(currencySymbolFieldName) ?? rec?.getValue?.(currencySymbolFieldName) ?? "";
-      return { id, formattedValues, rawValues, originalValues, currencySymbol, validationInitializedByColumnChange: false, validators: new Map() };
+      return { id, formattedValues, rawValues, originalValues, currencySymbol, validationInitiatedByColumnChange: false, validators: new Map() };
     });
   }, [dataset?.sortedRecordIds, visibleColumnsNamesKey]);
 
@@ -875,7 +1221,8 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
     return ColumnResizeController.computeProportionalSizing({
       columns: visibleColumns,
       allocatedWidth: allocatedWidth,
-      gridPaddingsPx: GRID_LEFT_PADDING + GRID_RIGHT_PADDING,
+      gridRightPaddingPx: GRID_RIGHT_PADDING,
+      statusColumnSize: STATUS_COL_PX,
       selectionColumnSize: makerSettings.allowRowSelection ? CHECKBOX_COL_PX : 0,
       gotoRecordColumnSize: makerSettings.showOpenRecordColumn ? GOTO_COL_PX : 0,
       scrollbarSize: SCROLLBAR_SIZE,
@@ -948,7 +1295,6 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
     isFetchingRef
   });
 
-  const [selectedItems, setSelectedItems] = React.useState<Set<string>>(new Set());
   const [isSelectingAllRows, setIsSelectingAllRows] = React.useState(false);
   React.useEffect(() => {
     if (!isSelectingAllRows)
@@ -967,10 +1313,9 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
     setRowsSelection(dataset.sortedRecordIds);
     setIsSelectingAllRows(false);
 
-    const headerGroup = gridContainerRef.current?.querySelector('[role="rowgroup"].fui-DataGridHeader') as HTMLElement | null;
-    const cell = headerGroup?.querySelector('[role="gridcell"].fui-DataGridSelectionCell') as HTMLElement | null;
-    if (cell) {
-      cell.setAttribute('tabindex', '-1');
+    const cell = gridContainerRef.current?.
+      querySelector(`[data-row-id="${HEADER_ROW_ID}"][data-col-key="${SELECTION_COL_ID}"]`) as HTMLElement | null;;
+    if (cell != null) {
       cell.scrollIntoView({ behavior: "smooth", block: "center" });
       requestAnimationFrame(() => cell.focus());
     }
@@ -1187,8 +1532,8 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
           style={{
             position: "relative",
             height: "100%",
-            width: `calc(100% - ${GRID_LEFT_PADDING + GRID_RIGHT_PADDING}px)`,
-            paddingLeft: `${GRID_LEFT_PADDING}px`,
+            width: `calc(100% - ${GRID_RIGHT_PADDING}px)`,
+            paddingLeft: "0",
             paddingRight: `${GRID_RIGHT_PADDING}px`,
             overflowX: "hidden",
             display: "flex",
@@ -1223,7 +1568,7 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
               columns={columns}
               getRowId={(r: Row) => r.id}
               sortable={false}
-              selectionMode={makerSettings.allowRowSelection ? "multiselect" : undefined}
+              selectionMode={undefined}
               selectedItems={selectedItems}
               resizableColumns={true}
               columnSizingOptions={sizingOptions}
@@ -1232,7 +1577,7 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
                 if (data?.columnId == null)
                   return;
 
-                if (data.columnId === goToRecord)
+                if ([STATUS_COL_ID, SELECTION_COL_ID, GO_TO_RECORD_COL_ID].includes(String(data.columnId)))
                   return;
 
                 if (data.width < COLUMN_MIN_WIDTH)
@@ -1267,37 +1612,8 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
                   flex: "0 0 auto",
                   overflow: "hidden"
                 }}>
-                <DataGridRow
-                  onClick={(e: React.PointerEvent<HTMLDivElement>) => {
-                    const target = e.target as HTMLElement;
-
-                    if (!makerSettings.allowRowSelection)
-                      return;
-
-                    const selectAllCheckbox = ((target instanceof HTMLInputElement && target.type === "checkbox") ? target : target.closest('[role="checkbox"]') ?? target.querySelector('[role="checkbox"]'));
-                    if (!selectAllCheckbox)
-                      return;
-
-                    const row = selectAllCheckbox.closest('[role="row"]');
-                    if (!row)
-                      return;
-
-                    const someRowsAreSelected = (selectedItems.size ?? 0) > 0;
-                    if (someRowsAreSelected)
-                      clearRowsSelection();
-                    else
-                      setIsSelectingAllRows(true);
-                  }}>
-                  {({ renderHeaderCell, columnId }) => (
-                    <DataGridHeaderCell
-                      className={
-                        "pcf-grid-header" +
-                        (String(columnId) === goToRecord ? " pcf-col--no-resize" : "")
-                      }
-                    >
-                      {renderHeaderCell()}
-                    </DataGridHeaderCell>
-                  )}
+                <DataGridRow>
+                  {({ renderHeaderCell, columnId }) => renderHeaderCell()}
                 </DataGridRow>
               </DataGridHeader>
 
@@ -1314,47 +1630,16 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
                   }}
                   onScroll={onBodyScroll}
                 >
-                  {({ item, rowId }) => (
-                    <DataGridRow
+                  {({ item, rowId }) => {
+                    const isSelected = selectedItems.has(String(rowId));
+                    return <DataGridRow
+                      aria-selected={isSelected}
                       key={rowId as React.Key}
                       onClick={(e: React.PointerEvent<HTMLDivElement>) => {
-                        const target = e.target as HTMLElement;
-
-                        const row = target.closest('[role="row"]');
-                        if (!row)
-                          return;
-
-                        const isSelectCheckbox = ((target instanceof HTMLInputElement && target.type === "checkbox") ? target : target.closest('[role="checkbox"]') ?? target.querySelector('[role="checkbox"]')) != null;
-                        if (!isSelectCheckbox) {
-                          setOnlyRowToSelection(String(rowId));
-                          return;
-                        }
-
-                        addOrRemoveRowFromSelection(String(rowId));
-                      }}
-                      onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
-                        if (e.key !== "Enter")
-                          return;
-
-                        const target = e.target as HTMLElement;
-
-                        const row = target.closest('[role="row"]');
-                        if (!row)
-                          return;
-
-                        const isSelectCheckbox = ((target instanceof HTMLInputElement && target.type === "checkbox") ? target : target.closest('[role="checkbox"]') ?? target.querySelector('[role="checkbox"]')) != null;
-                        if (!isSelectCheckbox)
-                          return;
-
-                        addOrRemoveRowFromSelection(String(rowId));
+                        setOnlyRowToSelection(String(rowId));
                       }}
                       onDoubleClick={(e: React.MouseEvent<HTMLDivElement>) => {
-                        const target = e.target as HTMLElement;
                         e.preventDefault();
-
-                        const isSelectCheckbox = ((target instanceof HTMLInputElement && target.type === "checkbox") ? target : target.closest('[role="checkbox"]') ?? target.querySelector('[role="checkbox"]')) != null;
-                        if (isSelectCheckbox)
-                          return;
 
                         if (isEditableGrid)
                           return;
@@ -1372,7 +1657,7 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
                     >
                       {({ renderCell }) => renderCell(item)}
                     </DataGridRow>
-                  )}
+                  }}
                 </DataGridBody>
                 :
                 <div

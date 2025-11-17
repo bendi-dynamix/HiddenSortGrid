@@ -12,9 +12,6 @@ export interface PicklistCellProps extends CellProps {
 
 export const PicklistCell = React.forwardRef<CellHandle, PicklistCellProps>(function PicklistCellCell(
     {
-        formatting,
-        gridCellRef,
-        validationToken,
         rawValue,
         formattedValue,
         isEditing,
@@ -24,8 +21,10 @@ export const PicklistCell = React.forwardRef<CellHandle, PicklistCellProps>(func
         valuesList,
         fieldInfo,
 
+        rowValidationInitiated,
         onValidate,
         onCommit,
+        onEditingFinished,
         onOpenButtonClicked
     }: PicklistCellProps,
     ref
@@ -33,7 +32,7 @@ export const PicklistCell = React.forwardRef<CellHandle, PicklistCellProps>(func
     const readonlyRef = React.useRef<HTMLElement>(null);
     const inputRef = React.useRef<HTMLInputElement>(null);
 
-    const [error, setError] = React.useState<string | undefined | null>(undefined);
+    const [error, setErrorState] = React.useState<string | undefined | null>(undefined);
     const [open, setOpen] = React.useState(false);
     const [currentValue, setCurrentValue] = React.useState(rawValue != null ? String(rawValue as number) : emptyValueStr);
     const originalRef = React.useRef(rawValue as number | null);
@@ -62,8 +61,14 @@ export const PicklistCell = React.forwardRef<CellHandle, PicklistCellProps>(func
             if (automaticCommitRef.current)
                 void commit(currentValue);
         },
-        validate(): boolean {
-            return validate() == null;
+        validateCell(): boolean {
+            const validationResult = validate();
+            setError(validationResult);
+
+            return validationResult == null;
+        },
+        resetCellValidation(): void {
+            setError(null);
         }
     }));
 
@@ -111,9 +116,9 @@ export const PicklistCell = React.forwardRef<CellHandle, PicklistCellProps>(func
         return null;
     }
 
-    React.useEffect(() => {
-        setError(prev => {
-            const next = isEditing || (validationToken ?? "") !== "" ? validate() : null;
+    function setError(error: string | null) {
+        setErrorState(prev => {
+            const next = error;
 
             if (prev === next)  // important to use ===, we need to distinguish undefined (init value) and null (ok)
                 return prev;
@@ -122,7 +127,32 @@ export const PicklistCell = React.forwardRef<CellHandle, PicklistCellProps>(func
 
             return next;
         });
-    }, [currentValue, validationToken, isEditing]);
+    }
+
+    React.useEffect(() => {
+        if (isEditing)
+            return;
+
+        if (!rowValidationInitiated) {
+            setError(null);
+            return;
+        }
+
+        const validationResult = validate();
+        setError(validationResult);
+    }, [isEditing]);
+
+    async function onEnterPressed(value: string) {
+        await commit(value);
+        onEditingFinished();
+    }
+
+    function onEscPressed() {
+        setCurrentValue((originalRef.current ?? emptyValueStr) !== emptyValueStr ? String(originalRef.current) : emptyValueStr);
+        requestAnimationFrame(() => {
+            onEditingFinished();
+        });
+    }
 
     const isError = (error ?? null) != null;
     return (
@@ -245,31 +275,17 @@ export const PicklistCell = React.forwardRef<CellHandle, PicklistCellProps>(func
                             }
 
                             if (e.key === "Enter") {
-                                setOpen(false);
-
                                 e.preventDefault();
                                 e.stopPropagation();
                                 automaticCommitRef.current = false;
 
-                                requestAnimationFrame(() => {   // <= wait for validation updates validationErrors's state
-                                    void (async () => {
-                                        await commit(currentValue);
-
-                                        el.blur();
-                                        gridCellRef.current?.focus();
-                                    })();
-                                });
+                                void onEnterPressed(currentValue);
                             } else if (e.key === "Escape") {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 automaticCommitRef.current = false;
 
-                                setCurrentValue((originalRef.current ?? emptyValueStr) !== emptyValueStr ? String(originalRef.current) : emptyValueStr);
-
-                                requestAnimationFrame(() => {
-                                    el.blur();
-                                    gridCellRef.current?.focus();
-                                });
+                                onEscPressed();
                             }
                         }
                     }}

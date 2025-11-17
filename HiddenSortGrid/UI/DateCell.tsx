@@ -7,6 +7,7 @@ import { formatDateD365, parseDate, pickerDateToUtc } from "../HelperDateTime";
 import { CalendarLtr20Regular, ErrorCircle20Regular } from "@fluentui/react-icons";
 
 export interface DateCellProps extends CellProps {
+    formatting: ComponentFramework.Formatting;
     metadataInfo: DateMetadata | null;
     userFormatInfo: UserDateFormatInfo;
     onOpenButtonClicked: () => void;
@@ -15,8 +16,6 @@ export interface DateCellProps extends CellProps {
 export const DateCell = React.forwardRef<CellHandle, DateCellProps>(function DateCell(
     {
         formatting,
-        gridCellRef,
-        validationToken,
         rawValue,
         formattedValue,
         isEditing,
@@ -26,8 +25,10 @@ export const DateCell = React.forwardRef<CellHandle, DateCellProps>(function Dat
         metadataInfo,
         userFormatInfo,
 
+        rowValidationInitiated,
         onValidate,
         onCommit,
+        onEditingFinished,
         onOpenButtonClicked
     }: DateCellProps,
     ref
@@ -35,7 +36,7 @@ export const DateCell = React.forwardRef<CellHandle, DateCellProps>(function Dat
     const readonlyRef = React.useRef<HTMLElement>(null);
     const inputRef = React.useRef<HTMLInputElement>(null);
 
-    const [error, setError] = React.useState<string | undefined | null>(undefined);
+    const [error, setErrorState] = React.useState<string | undefined | null>(undefined);
     const [open, setOpen] = React.useState(false);
     const originalRef = React.useRef(rawValue as Date | null);
     const automaticCommitRef = React.useRef(true);
@@ -67,8 +68,14 @@ export const DateCell = React.forwardRef<CellHandle, DateCellProps>(function Dat
             if (automaticCommitRef.current)
                 void commit(currentValueRef.current);
         },
-        validate(): boolean {
-            return validate() == null;
+        validateCell(): boolean {
+            const validationResult = validate();
+            setError(validationResult);
+
+            return validationResult == null;
+        },
+        resetCellValidation(): void {
+            setError(null);
         }
     }));
 
@@ -116,9 +123,9 @@ export const DateCell = React.forwardRef<CellHandle, DateCellProps>(function Dat
         return null;
     }
 
-    React.useEffect(() => {
-        setError(prev => {
-            const next = isEditing || (validationToken ?? "") !== "" ? validate() : null;
+    function setError(error: string | null) {
+        setErrorState(prev => {
+            const next = error;
 
             if (prev === next)  // important to use ===, we need to distinguish undefined (init value) and null (ok)
                 return prev;
@@ -127,7 +134,35 @@ export const DateCell = React.forwardRef<CellHandle, DateCellProps>(function Dat
 
             return next;
         });
-    }, [currentValue, validationToken, isEditing]);
+    }
+
+    React.useEffect(() => {
+        if (isEditing)
+            return;
+
+        if (!rowValidationInitiated) {
+            setError(null);
+            return;
+        }
+
+        const validationResult = validate();
+        setError(validationResult);
+    }, [isEditing]);
+
+    async function onEnterPressed(value: string) {
+        const pickerDate = parseDate(value, userFormatInfo);
+        const utcForSave = pickerDateToUtc(pickerDate ?? null, formatting, metadataInfo);
+
+        await commit(utcForSave);
+        onEditingFinished();
+    }
+
+    function onEscPressed() {
+        setCurrentValue(originalRef.current);
+        requestAnimationFrame(() => {
+            onEditingFinished();
+        });
+    }
 
     const isError = (error ?? null) != null;
     return (
@@ -243,27 +278,13 @@ export const DateCell = React.forwardRef<CellHandle, DateCellProps>(function Dat
                                 e.stopPropagation();
                                 automaticCommitRef.current = false;
 
-                                requestAnimationFrame(() => {   // <= wait for validation updates validationErrors's state
-                                    void (async () => {
-                                        const pickerDate = parseDate(el.value, userFormatInfo);
-                                        const utcForSave = pickerDateToUtc(pickerDate ?? null, formatting, metadataInfo);
-                                        await commit(utcForSave);
-
-                                        el.blur();
-                                        gridCellRef.current?.focus();
-                                    })();
-                                });
+                                void onEnterPressed(el.value);
                             } else if (e.key === "Escape") {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 automaticCommitRef.current = false;
 
-                                setCurrentValue(originalRef.current);
-
-                                requestAnimationFrame(() => {
-                                    el.blur();
-                                    gridCellRef.current?.focus();
-                                });
+                                onEscPressed();
                             }
                         }
                     }}

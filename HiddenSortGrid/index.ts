@@ -83,7 +83,7 @@ export class HiddenSortGrid implements ComponentFramework.ReactControl<IInputs, 
   }
 
   private lastState: React.ReactElement | undefined;
-  private reloadToken = generateRandomId();
+  private gridReloaded = false;
   public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
     this._context = context;
 
@@ -94,7 +94,7 @@ export class HiddenSortGrid implements ComponentFramework.ReactControl<IInputs, 
     const allocatedWidth = context.mode.allocatedWidth ?? 0;
 
     if (ds?.loading && this.lastState) {
-      this.reloadToken = generateRandomId();
+      this.gridReloaded = true;
       return this.lastState;
     }
 
@@ -102,8 +102,10 @@ export class HiddenSortGrid implements ComponentFramework.ReactControl<IInputs, 
       context,
       dataset: ds,
       allocatedWidth,
-      reloadToken: this.reloadToken
+      gridReloaded: this.gridReloaded
     };
+
+    this.gridReloaded = false;
 
     this.lastState = React.createElement(
       IdPrefixProvider,

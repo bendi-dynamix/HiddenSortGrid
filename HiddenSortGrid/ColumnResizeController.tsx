@@ -4,19 +4,22 @@ type Column = ComponentFramework.PropertyHelper.DataSetApi.Column;
 export interface ColumnResizeControllerProps {
   columns: Column[];
   allocatedWidth: number;
-  gridPaddingsPx: number;
+  gridRightPaddingPx: number;
+  statusColumnSize: number;
   selectionColumnSize: number;
   gotoRecordColumnSize: number;
   scrollbarSize: number;
   minWidthPx: number;
 }
 
-export const goToRecord = "__goToRecord__";
+export const STATUS_COL_ID = "__hsgStatusCol__";
+export const SELECTION_COL_ID = "__hsgSelectionCol__";
+export const GO_TO_RECORD_COL_ID = "__hsgGoToRecordCol__";
 
 export class ColumnResizeController {
   public static computeProportionalSizing(props: ColumnResizeControllerProps): TableColumnSizingOptions {
     const allocatedW = props.allocatedWidth ?? 0;
-    const totalW = Math.max(0, allocatedW - props.gridPaddingsPx - props.selectionColumnSize - props.gotoRecordColumnSize - props.scrollbarSize);
+    const totalW = Math.max(0, allocatedW - props.statusColumnSize - props.selectionColumnSize - props.gotoRecordColumnSize - props.scrollbarSize - props.gridRightPaddingPx);
 
     let columnsSizes = props.columns.map((c, i) => {
       return {
@@ -66,6 +69,22 @@ export class ColumnResizeController {
     if (totalW <= 0)
       return sizing;
 
+    if (props.statusColumnSize > 0) {
+      sizing[STATUS_COL_ID] =
+      {
+        minWidth: props.statusColumnSize,
+        defaultWidth: props.statusColumnSize
+      }
+    }
+
+    if (props.selectionColumnSize > 0) {
+      sizing[SELECTION_COL_ID] =
+      {
+        minWidth: props.selectionColumnSize,
+        defaultWidth: props.selectionColumnSize
+      }
+    }
+
     columnsSizes.forEach(c => {
       sizing[c.name] = {
         minWidth: props.minWidthPx,
@@ -74,7 +93,7 @@ export class ColumnResizeController {
     });
 
     if (props.gotoRecordColumnSize > 0) {
-      sizing[goToRecord] =
+      sizing[GO_TO_RECORD_COL_ID] =
       {
         minWidth: props.gotoRecordColumnSize,
         defaultWidth: props.gotoRecordColumnSize
