@@ -3,7 +3,7 @@
   <control
     namespace="DynamiX"
     constructor="HiddenSortGrid"
-    version="1.0.1"
+    version="1.0.2"
     display-name-key="Hidden_Sort_Grid_Display"
     description-key="Hidden_Sort_Grid_Desc"
     control-type="virtual">

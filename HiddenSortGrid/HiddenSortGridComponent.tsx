@@ -911,24 +911,6 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
           }
         }
 
-        const rand = Math.random() * 4;
-        if (rand <= 1)
-          icon = (
-            <ErrorCircle16Regular
-              color="rgb(209, 52, 56)"
-            />
-          );
-        else if (rand <= 2)
-          icon = (
-            <CheckmarkCircle16Regular
-              color="#107C10"
-            />
-          );
-        else if (rand <= 3)
-          icon = <Spinner size="extra-tiny" />;
-        else
-          icon = null;
-
         return (
           <DataGridCell
             className="pcf-grid-status-cell"
