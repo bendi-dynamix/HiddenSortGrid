@@ -13,9 +13,6 @@ export interface MoneyCellProps extends CellProps {
 
 export const MoneyCell = React.forwardRef<CellHandle, MoneyCellProps>(function MoneyCell(
     {
-        formatting,
-        gridCellRef,
-        validationToken,
         rawValue,
         formattedValue,
         isEditing,
@@ -26,15 +23,17 @@ export const MoneyCell = React.forwardRef<CellHandle, MoneyCellProps>(function M
         numericInfo,
         userFormatInfo,
 
+        rowValidationInitiated,
         onValidate,
-        onCommit
+        onCommit,
+        onEditingFinished
     }: MoneyCellProps,
     ref
 ) {
     const readonlyRef = React.useRef<HTMLElement>(null);
     const inputRef = React.useRef<HTMLInputElement>(null);
 
-    const [error, setError] = React.useState<string | undefined | null>(undefined);
+    const [error, setErrorState] = React.useState<string | undefined | null>(undefined);
     const [currentValue, setCurrentValue] = React.useState(formattedValue);
     const originalRef = React.useRef(formattedValue);
     const automaticCommitRef = React.useRef(true);
@@ -58,8 +57,14 @@ export const MoneyCell = React.forwardRef<CellHandle, MoneyCellProps>(function M
             if (automaticCommitRef.current)
                 void commit(inputRef.current?.value ?? "");
         },
-        validate(): boolean {
-            return validate() == null;
+        validateCell(): boolean {
+            const validationResult = validate();
+            setError(validationResult);
+
+            return validationResult == null;
+        },
+        resetCellValidation(): void {
+            setError(null);
         }
     }));
 
@@ -120,9 +125,9 @@ export const MoneyCell = React.forwardRef<CellHandle, MoneyCellProps>(function M
         return null;
     }
 
-    React.useEffect(() => {
-        setError(prev => {
-            const next = isEditing || (validationToken ?? "") !== "" ? validate() : null;
+    function setError(error: string | null) {
+        setErrorState(prev => {
+            const next = error;
 
             if (prev === next)  // important to use ===, we need to distinguish undefined (init value) and null (ok)
                 return prev;
@@ -131,7 +136,32 @@ export const MoneyCell = React.forwardRef<CellHandle, MoneyCellProps>(function M
 
             return next;
         });
-    }, [currentValue, currencySymbol, userFormatInfo, numericInfo, validationToken, isEditing]);
+    }
+
+    React.useEffect(() => {
+        if (isEditing)
+            return;
+
+        if (!rowValidationInitiated) {
+            setError(null);
+            return;
+        }
+
+        const validationResult = validate();
+        setError(validationResult);
+    }, [isEditing]);
+
+    async function onEnterPressed(value: string) {
+        await commit(value);
+        onEditingFinished();
+    }
+
+    function onEscPressed() {
+        setCurrentValue(originalRef.current);
+        requestAnimationFrame(() => {
+            onEditingFinished();
+        });
+    }
 
     const isError = (error ?? null) != null;
     return (
@@ -209,25 +239,13 @@ export const MoneyCell = React.forwardRef<CellHandle, MoneyCellProps>(function M
                                 e.stopPropagation();
                                 automaticCommitRef.current = false;
 
-                                requestAnimationFrame(() => {   // <= wait for validation updates validationErrors's state
-                                    void (async () => {
-                                        await commit(el.value);
-
-                                        el.blur();
-                                        gridCellRef.current?.focus();
-                                    })();
-                                });
+                                void onEnterPressed(el.value);
                             } else if (e.key === "Escape") {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 automaticCommitRef.current = false;
 
-                                setCurrentValue(originalRef.current);
-
-                                requestAnimationFrame(() => {
-                                    el.blur();
-                                    gridCellRef.current?.focus();
-                                });
+                                onEscPressed();
                             }
                         }
                     }}

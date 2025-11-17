@@ -80,6 +80,18 @@ Validation errors are displayed using the native Power Apps banner style, includ
 
 ---
 
+### 🔹 Status column
+![Status column](./docs/images/status-column.png)  
+Each row now includes a status indicator column, showing the current state of the record.
+
+- No icon – the row is valid and has no pending actions  
+- Validation error – a red error icon is shown when the row contains invalid data  
+- Saving – a progress spinner appears while the row is being updated  
+- Save successful – a green checkmark is displayed for 5 seconds after a successful update  
+- Save failed – a red error icon is displayed for 5 seconds if the update fails
+
+---
+
 ## ⚙️ Configuration
 
 | Property | Description |

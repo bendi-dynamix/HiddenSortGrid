@@ -16,9 +16,6 @@ export interface LinkCellProps extends CellProps {
 
 export const LinkCell = React.forwardRef<CellHandle, LinkCellProps>(function LinkCell(
     {
-        formatting,
-        gridCellRef,
-        validationToken,
         rawValue,
         formattedValue,
         isEditing,
@@ -29,8 +26,10 @@ export const LinkCell = React.forwardRef<CellHandle, LinkCellProps>(function Lin
         textInfo,
         userFormatInfo,
 
+        rowValidationInitiated,
         onValidate,
         onCommit,
+        onEditingFinished,
         onLookupClick
     }: LinkCellProps,
     ref
@@ -38,7 +37,7 @@ export const LinkCell = React.forwardRef<CellHandle, LinkCellProps>(function Lin
     const readonlyRef = React.useRef<HTMLElement>(null);
     const inputRef = React.useRef<HTMLInputElement>(null);
 
-    const [error, setError] = React.useState<string | undefined | null>(undefined);
+    const [error, setErrorState] = React.useState<string | undefined | null>(undefined);
     const [currentValue, setCurrentValue] = React.useState(formattedValue);
     const originalRef = React.useRef(formattedValue);
     const automaticCommitRef = React.useRef(true);
@@ -62,8 +61,14 @@ export const LinkCell = React.forwardRef<CellHandle, LinkCellProps>(function Lin
             if (automaticCommitRef.current)
                 void commit(inputRef.current?.value ?? "");
         },
-        validate(): boolean {
-            return validate() == null;
+        validateCell(): boolean {
+            const validationResult = validate();
+            setError(validationResult);
+
+            return validationResult == null;
+        },
+        resetCellValidation(): void {
+            setError(null);
         }
     }));
 
@@ -122,9 +127,9 @@ export const LinkCell = React.forwardRef<CellHandle, LinkCellProps>(function Lin
         return null;
     }
 
-    React.useEffect(() => {
-        setError(prev => {
-            const next = isEditing || (validationToken ?? "") !== "" ? validate() : null;
+    function setError(error: string | null) {
+        setErrorState(prev => {
+            const next = error;
 
             if (prev === next)  // important to use ===, we need to distinguish undefined (init value) and null (ok)
                 return prev;
@@ -133,7 +138,32 @@ export const LinkCell = React.forwardRef<CellHandle, LinkCellProps>(function Lin
 
             return next;
         });
-    }, [currentValue, userFormatInfo, validationToken, isEditing]);
+    }
+
+    React.useEffect(() => {
+        if (isEditing)
+            return;
+
+        if (!rowValidationInitiated) {
+            setError(null);
+            return;
+        }
+
+        const validationResult = validate();
+        setError(validationResult);
+    }, [isEditing]);
+
+    async function onEnterPressed(value: string) {
+        await commit(value);
+        onEditingFinished();
+    }
+
+    function onEscPressed() {
+        setCurrentValue(originalRef.current);
+        requestAnimationFrame(() => {
+            onEditingFinished();
+        });
+    }
 
     const buildHref = (val: string): string => {
         const v = val ?? "";
@@ -269,25 +299,13 @@ export const LinkCell = React.forwardRef<CellHandle, LinkCellProps>(function Lin
                                 e.stopPropagation();
                                 automaticCommitRef.current = false;
 
-                                requestAnimationFrame(() => {   // <= wait for validation updates validationErrors's state
-                                    void (async () => {
-                                        await commit(el.value);
-
-                                        el.blur();
-                                        gridCellRef.current?.focus();
-                                    })();
-                                });
+                                void onEnterPressed(el.value);
                             } else if (e.key === "Escape") {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 automaticCommitRef.current = false;
 
-                                setCurrentValue(originalRef.current);
-
-                                requestAnimationFrame(() => {
-                                    el.blur();
-                                    gridCellRef.current?.focus();
-                                });
+                                onEscPressed();
                             }
                         }
                     }}

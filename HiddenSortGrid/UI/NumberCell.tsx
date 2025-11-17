@@ -14,28 +14,26 @@ export interface NumberCellProps extends CellProps {
 
 export const NumberCell = React.forwardRef<CellHandle, NumberCellProps>(function NumberCell(
     {
-        formatting,
-        gridCellRef,
-        validationToken,
         rawValue,
         formattedValue,
         isEditing,
         className,
         style,
 
-        kind,
         numericInfo,
         userFormatInfo,
 
+        rowValidationInitiated,
         onValidate,
-        onCommit
+        onCommit,
+        onEditingFinished
     }: NumberCellProps,
     ref
 ) {
     const readonlyRef = React.useRef<HTMLElement>(null);
     const inputRef = React.useRef<HTMLInputElement>(null);
 
-    const [error, setError] = React.useState<string | undefined | null>(undefined);
+    const [error, setErrorState] = React.useState<string | undefined | null>(undefined);
     const [currentValue, setCurrentValue] = React.useState(formattedValue);
     const originalRef = React.useRef(formattedValue);
     const automaticCommitRef = React.useRef(true);
@@ -59,8 +57,14 @@ export const NumberCell = React.forwardRef<CellHandle, NumberCellProps>(function
             if (automaticCommitRef.current)
                 void commit(inputRef.current?.value ?? "");
         },
-        validate(): boolean {
-            return validate() == null;
+        validateCell(): boolean {
+            const validationResult = validate();
+            setError(validationResult);
+
+            return validationResult == null;
+        },
+        resetCellValidation(): void {
+            setError(null);
         }
     }));
 
@@ -92,11 +96,12 @@ export const NumberCell = React.forwardRef<CellHandle, NumberCellProps>(function
     }, [rawValue, formattedValue]);
 
     const commit = async (value: string) => {
+        const isValid = validate() == null;
         const parsed = extractNumberD365(value, null, userFormatInfo, numericInfo) ?? null;
         const nextFormatted =
-            error != null
-                ? value
-                : (formatNumberD365(parsed, null, userFormatInfo, numericInfo) ?? "");
+            isValid
+                ? (formatNumberD365(parsed, null, userFormatInfo, numericInfo) ?? "")
+                : value;
 
         if (nextFormatted !== originalRef.current)
             await onCommit(parsed, nextFormatted);
@@ -120,9 +125,9 @@ export const NumberCell = React.forwardRef<CellHandle, NumberCellProps>(function
         return null;
     }
 
-    React.useEffect(() => {
-        setError(prev => {
-            const next = isEditing || (validationToken ?? "") !== "" ? validate() : null;
+    function setError(error: string | null) {
+        setErrorState(prev => {
+            const next = error;
 
             if (prev === next)  // important to use ===, we need to distinguish undefined (init value) and null (ok)
                 return prev;
@@ -131,7 +136,32 @@ export const NumberCell = React.forwardRef<CellHandle, NumberCellProps>(function
 
             return next;
         });
-    }, [currentValue, userFormatInfo, numericInfo, validationToken, isEditing]);
+    }
+
+    React.useEffect(() => {
+        if (isEditing)
+            return;
+
+        if (!rowValidationInitiated) {
+            setError(null);
+            return;
+        }
+
+        const validationResult = validate();
+        setError(validationResult);
+    }, [isEditing]);
+
+    async function onEnterPressed(value: string) {
+        await commit(value);
+        onEditingFinished();
+    }
+
+    function onEscPressed() {
+        setCurrentValue(originalRef.current);
+        requestAnimationFrame(() => {
+            onEditingFinished();
+        });
+    }
 
     const isError = (error ?? null) != null;
     return (
@@ -209,25 +239,13 @@ export const NumberCell = React.forwardRef<CellHandle, NumberCellProps>(function
                                 e.stopPropagation();
                                 automaticCommitRef.current = false;
 
-                                requestAnimationFrame(() => {   // <= wait for validation updates validationErrors's state
-                                    void (async () => {
-                                        await commit(el.value);
-
-                                        el.blur();
-                                        gridCellRef.current?.focus();
-                                    })();
-                                });
+                                void onEnterPressed(el.value);
                             } else if (e.key === "Escape") {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 automaticCommitRef.current = false;
 
-                                setCurrentValue(originalRef.current);
-
-                                requestAnimationFrame(() => {
-                                    el.blur();
-                                    gridCellRef.current?.focus();
-                                });
+                                onEscPressed();
                             }
                         }
                     }}

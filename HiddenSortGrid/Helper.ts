@@ -18,7 +18,8 @@ export type ColumnInfo = ComponentFramework.PropertyHelper.DataSetApi.Column &
 };
 
 export interface ValidableHandle {
-  validate(): boolean;
+  validateCell(): boolean;
+  resetCellValidation(): void;
 }
 
 export interface CellHandle extends ValidableHandle {
@@ -29,17 +30,16 @@ export interface CellHandle extends ValidableHandle {
 }
 
 export interface CellProps {
-  formatting: ComponentFramework.Formatting;
-  gridCellRef: React.RefObject<HTMLDivElement>;
-  validationToken: string;
   rawValue: RawValue | null;
   formattedValue: string;
   isEditing: boolean;
   className?: string;
   style?: React.CSSProperties;
 
+  rowValidationInitiated: boolean;
   onValidate?: (error: string | null) => void;
   onCommit: (rawValue: RawValue, formattedValue: string) => void | Promise<void>;
+  onEditingFinished: () => void;
 }
 
 export type Mode = ComponentFramework.Mode & { isAuthoringMode: boolean }
@@ -129,8 +129,14 @@ export interface Row {
   formattedValues: Record<string, string>;
   originalValues: Record<string, RawValue>;
   currencySymbol: string;
-  validationInitializedByColumnChange: boolean;
+  validationInitiatedByColumnChange: boolean;
   validators: Map<string, ValidableHandle>;
+}
+
+export type SaveStatus = "idle" | "saving" | "success" | "error";
+
+export interface RowStatusInfo {
+  status: SaveStatus;
 }
 
 const pad2 = (n: number) => (n < 10 ? "0" + n : "" + n);
