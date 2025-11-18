@@ -122,7 +122,7 @@ Each row now includes a status indicator column, showing the current state of th
 | **Solution name** | `DynamiX - HiddenSortGrid` |
 | **Publisher** | Bendi DynamiX |
 | **Prefix** | `dmx` |
-| **Version** | `1.0.0.0` |
+| **Version** | `1.0.1.0` |
 | **License** | [MIT](LICENSE) |
 
 ---
