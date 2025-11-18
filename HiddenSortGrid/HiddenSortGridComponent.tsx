@@ -470,7 +470,7 @@ export const HiddenSortGridComponent: React.FC<HiddenSortGridComponentProps> = (
           return (
             <DataGridHeaderCell
               className={"pcf-grid-header" +
-                isRight ? " pcf-grid-header-right" : ""
+                (isRight ? " pcf-grid-header-right" : "")
               }
             >
               <TableCellLayout
